@@ -19,7 +19,7 @@ object NetworkUtils {
         return when {
             // Case 1: Phone is streaming its own hotspot
             hotSpotEnabled(networkCapabilities) -> getIPv4FromInterfaces(
-                "rndis"
+                "swlan"
             )
 
             // Case 2: Connected to Wi-Fi
