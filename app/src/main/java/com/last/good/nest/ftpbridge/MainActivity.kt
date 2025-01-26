@@ -3,11 +3,11 @@ package com.last.good.nest.ftpbridge
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.compose.NavHost
@@ -19,7 +19,9 @@ import com.last.good.nest.ftpbridge.ui.theme.FtpBridgeTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+
+        val preferences = Preferences(applicationContext)
+
         setContent {
             FtpBridgeTheme {
                 val navController = rememberNavController()
@@ -28,13 +30,15 @@ class MainActivity : ComponentActivity() {
                     composable(route = Screen.Permission.route) {
                         PermissionScreen(
                             onPermissionGranted = {
-                                navController.popBackStack()
                                 navController.navigate(Screen.Main.route)
                             }
                         )
                     }
                     composable(route = Screen.Main.route) {
-                        MainScreen()
+                        App(navigation = navController, prefs = remember { preferences })
+                    }
+                    composable(route = Screen.Settings.route) {
+                        SettingsScreen(prefs = remember { preferences }, goBack = { navController.popBackStack() })
                     }
                 }
             }

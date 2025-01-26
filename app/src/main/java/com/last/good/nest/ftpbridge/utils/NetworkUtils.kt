@@ -7,7 +7,9 @@ import java.net.NetworkInterface
 object NetworkUtils {
 
     fun getLocalIPv4Address(): InetAddress? {
-        return getIPv4FromInterfaces("swlan") ?: getIPv4FromInterfaces("wlan")
+        val hotspotAddress = getIPv4FromInterfaces("swlan")
+        val wifiAddress = getIPv4FromInterfaces("wlan")
+        return hotspotAddress ?: wifiAddress
     }
 
     private fun getIPv4FromInterfaces(interfacePrefix: String): InetAddress? {

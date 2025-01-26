@@ -43,7 +43,9 @@ dependencies {
 
     implementation(libs.smbj)
     implementation(libs.minimalftp)
-//    implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"))))
+
+    implementation(libs.data.store)
+    implementation(libs.data.store.preferences)
 
     // Optional - Integration with ViewModels
 //    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.5")
