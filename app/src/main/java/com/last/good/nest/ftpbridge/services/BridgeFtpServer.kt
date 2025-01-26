@@ -50,7 +50,7 @@ class BridgeFtpServer : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        ftpServer.listen(NetworkUtils.getLocalIPv4Address(applicationContext), SERVER_PORT)
+        ftpServer.listen(NetworkUtils.getLocalIPv4Address(), SERVER_PORT)
 
         return START_STICKY
     }
@@ -88,7 +88,7 @@ class BridgeFtpServer : Service() {
 
         return NotificationCompat.Builder(this, ftpNotification.channelId)
             .setContentTitle("FTP Server")
-            .setContentText("Running on ${NetworkUtils.getLocalIPv4Address(applicationContext)?.hostAddress}:$SERVER_PORT")
+            .setContentText("Running on ${NetworkUtils.getLocalIPv4Address()?.hostAddress}:$SERVER_PORT")
             .setSmallIcon(android.R.drawable.stat_sys_download)
             .setContentIntent(pendingIntent)
             .build()

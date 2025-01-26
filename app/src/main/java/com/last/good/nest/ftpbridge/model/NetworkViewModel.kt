@@ -36,8 +36,7 @@ class NetworkViewModel(application: Application) : AndroidViewModel(application)
     }
 
     private fun updateIpAddress() {
-        val context = getApplication<Application>().applicationContext
-        val newIp = NetworkUtils.getLocalIPv4Address(context)
+        val newIp = NetworkUtils.getLocalIPv4Address()
         _ipAddress.update { newIp }
     }
 }
