@@ -15,6 +15,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -24,7 +25,6 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.PermissionState
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
-
 
 @Composable
 fun PermissionScreen(onPermissionGranted: () -> Unit) {
@@ -46,20 +46,13 @@ private fun RequestPermissions(onPermissionGranted: () -> Unit) {
     val areNotificationsAllowed = { notificationPermissionState?.status?.isGranted != false }
     val isStoragePermissionGranted = { Environment.isExternalStorageManager() }
 
-    fun checkPermissions() {
-        if (areNotificationsAllowed() && isStoragePermissionGranted()) {
-            return onPermissionGranted()
-        }
-    }
-
     fun openNotificationSettings() {
-
+        notificationPermissionState?.launchPermissionRequest()
         val intent = Intent().apply {
             action = Settings.ACTION_APP_NOTIFICATION_SETTINGS
             putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
         }
         context.startActivity(intent)
-        checkPermissions()
     }
 
     fun launchStoragePermissionIntent() {
@@ -67,17 +60,19 @@ private fun RequestPermissions(onPermissionGranted: () -> Unit) {
             data = Uri.fromParts("package", context.packageName, null)
             context.startActivity(this)
         }
-        checkPermissions()
     }
 
-    checkPermissions()
+    LaunchedEffect(key1 = areNotificationsAllowed(), key2 = isStoragePermissionGranted()) {
+        if (areNotificationsAllowed() && isStoragePermissionGranted()) {
+            onPermissionGranted()
+        }
+    }
 
-    return Column(
+    Column(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-
         Text(
             modifier = Modifier
                 .fillMaxWidth(0.8f)
@@ -90,7 +85,6 @@ private fun RequestPermissions(onPermissionGranted: () -> Unit) {
         if (!areNotificationsAllowed()) {
             Button(onClick = { openNotificationSettings() }) {
                 Text("Request Notification permission")
-                notificationPermissionState?.launchPermissionRequest()
             }
         }
 

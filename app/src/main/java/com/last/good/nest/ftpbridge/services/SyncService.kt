@@ -19,6 +19,7 @@ import com.last.good.nest.ftpbridge.model.FileSyncState.State.SYNC_IN_PROGRESS
 import com.last.good.nest.ftpbridge.model.ServiceState
 import com.last.good.nest.ftpbridge.repository.FileSyncStateRepository
 import com.last.good.nest.ftpbridge.services.BridgeFtpServer.Companion.TMP_SUB_FOLDER_NAME
+import com.last.good.nest.ftpbridge.utils.Notifications
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -36,14 +37,13 @@ import kotlin.time.toDuration
 class SyncService : Service() {
 
     companion object {
-        const val CHANNEL_ID = "SyncService"
-        const val NOTIFICATION_ID = 1
-
-        var serviceState = mutableStateOf(ServiceState.NOT_RUNNING);
+        var serviceState = mutableStateOf(ServiceState.NOT_RUNNING)
         fun getState(): ServiceState {
-            return serviceState.value;
+            return serviceState.value
         }
     }
+
+    private val syncNotification = Notifications.Constant.SYNC_FG_SERVICE
 
     private val serviceJob = Job()
     private val serviceScope = CoroutineScope(Dispatchers.Default + serviceJob)
@@ -60,7 +60,7 @@ class SyncService : Service() {
     override fun onCreate() {
         super.onCreate()
         createNotificationChannel()
-        startForeground(NOTIFICATION_ID, createNotification())
+        startForeground(syncNotification.id, createNotification())
         check(rootDir.exists())
         serviceState.value = ServiceState.RUNNING
     }
@@ -97,7 +97,7 @@ class SyncService : Service() {
                             }
                         }
 
-                    watchKey.reset();
+                    watchKey.reset()
                 }
             }
 
@@ -137,11 +137,11 @@ class SyncService : Service() {
 
     private fun createNotificationChannel() {
         val notificationManager = getSystemService(NotificationManager::class.java)
-        val channelExisting = notificationManager.getNotificationChannel(CHANNEL_ID)
+        val channelExisting = notificationManager.getNotificationChannel(syncNotification.channelId)
 
         if (channelExisting == null) {
             val notificationChannel = NotificationChannel(
-                CHANNEL_ID,
+                syncNotification.channelId,
                 "Sync Service Channel",
                 NotificationManager.IMPORTANCE_DEFAULT
             )
@@ -160,7 +160,7 @@ class SyncService : Service() {
             PendingIntent.FLAG_IMMUTABLE
         )
 
-        return NotificationCompat.Builder(this, CHANNEL_ID)
+        return NotificationCompat.Builder(this, syncNotification.channelId)
             .setContentTitle("Sync Bridge")
             .setContentText("Sync process is running")
             .setSmallIcon(android.R.drawable.ic_popup_sync)
