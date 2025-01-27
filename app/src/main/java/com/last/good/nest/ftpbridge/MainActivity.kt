@@ -3,6 +3,7 @@ package com.last.good.nest.ftpbridge
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.foundation.background
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -25,12 +26,25 @@ class MainActivity : ComponentActivity() {
         setContent {
             FtpBridgeTheme {
                 val navController = rememberNavController()
-                NavHost(navController = navController, startDestination = Screen.Permission.route, Modifier.background(
-                    MaterialTheme.colorScheme.background)) {
+                NavHost(
+                    navController = navController,
+                    startDestination = Screen.Permission.route,
+                    Modifier.background(
+                        MaterialTheme.colorScheme.background
+                    ),
+                    enterTransition = {slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Start)},
+                    exitTransition = {slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Start)},
+                    popEnterTransition =  {slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.End)},
+                    popExitTransition =  {slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.End)},
+                ) {
                     composable(route = Screen.Permission.route) {
                         PermissionScreen(
                             onPermissionGranted = {
-                                navController.navigate(Screen.Main.route)
+                                navController.navigate(Screen.Main.route) {
+                                    popUpTo(Screen.Permission.route) {
+                                        inclusive = true
+                                    }
+                                }
                             }
                         )
                     }
