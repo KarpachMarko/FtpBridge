@@ -15,6 +15,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.last.good.nest.ftpbridge.navigation.Screen
+import com.last.good.nest.ftpbridge.screens.PermissionScreen
+import com.last.good.nest.ftpbridge.screens.SettingsScreen
 import com.last.good.nest.ftpbridge.ui.theme.FtpBridgeTheme
 
 class MainActivity : ComponentActivity() {

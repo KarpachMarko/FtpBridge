@@ -1,4 +1,4 @@
-package com.last.good.nest.ftpbridge
+package com.last.good.nest.ftpbridge.screens
 
 import android.content.Intent
 import android.net.Uri
