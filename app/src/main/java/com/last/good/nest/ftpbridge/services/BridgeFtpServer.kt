@@ -22,7 +22,8 @@ class BridgeFtpServer : Service() {
 
     companion object {
         const val TMP_SUB_FOLDER_NAME = "ftp_bridge_tmp"
-        const val SERVER_PORT = 2121
+        const val SERVER_PORT_EXTRA = "ftp_port"
+        const val SERVER_DEFAULT_PORT = 2121
 
         var serviceState = mutableStateOf(ServiceState.NOT_RUNNING)
         fun getState(): ServiceState {
@@ -33,6 +34,7 @@ class BridgeFtpServer : Service() {
     private val ftpNotification = Notifications.Constant.FTP_FG_SERVICE
 
     private val tempDir by lazy { File(applicationContext.cacheDir, TMP_SUB_FOLDER_NAME) }
+
     private val fs by lazy { NativeFileSystem(tempDir) }
     private val auth by lazy { FtpUserAuthenticator(fs) }
     private val ftpServer by lazy { FTPServer(auth) }
@@ -44,13 +46,16 @@ class BridgeFtpServer : Service() {
     override fun onCreate() {
         super.onCreate()
         createNotificationChannel()
-        startForeground(ftpNotification.id, createNotification())
         tempDir.mkdirs()
-        serviceState.value = ServiceState.RUNNING
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        ftpServer.listen(NetworkUtils.getLocalIPv4Address(), SERVER_PORT)
+        val ftpPort = intent?.getIntExtra(SERVER_PORT_EXTRA, SERVER_DEFAULT_PORT)
+            ?: SERVER_DEFAULT_PORT
+
+        startForeground(ftpNotification.id, createNotification(ftpPort))
+        ftpServer.listen(NetworkUtils.getLocalIPv4Address(), ftpPort)
+        serviceState.value = ServiceState.RUNNING
 
         return START_STICKY
     }
@@ -77,7 +82,7 @@ class BridgeFtpServer : Service() {
         }
     }
 
-    private fun createNotification(): Notification {
+    private fun createNotification(ftpPort: Int): Notification {
         val notificationIntent = Intent(this, MainActivity::class.java)
         val pendingIntent = PendingIntent.getActivity(
             this,
@@ -88,7 +93,7 @@ class BridgeFtpServer : Service() {
 
         return NotificationCompat.Builder(this, ftpNotification.channelId)
             .setContentTitle("FTP Server")
-            .setContentText("Running on ${NetworkUtils.getLocalIPv4Address()?.hostAddress}:$SERVER_PORT")
+            .setContentText("Running on ${NetworkUtils.getLocalIPv4Address()?.hostAddress}:$ftpPort")
             .setSmallIcon(android.R.drawable.stat_sys_download)
             .setContentIntent(pendingIntent)
             .build()

@@ -30,12 +30,12 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.last.good.nest.ftpbridge.Preferences
+import com.last.good.nest.ftpbridge.IPreferences
 import kotlinx.coroutines.flow.first
 
 @Composable
 fun SettingsScreen(
-    prefs: Preferences,
+    prefs: IPreferences,
     goBack: () -> Unit
 ) {
     val numberPattern = remember { Regex("^\\d*\$") }

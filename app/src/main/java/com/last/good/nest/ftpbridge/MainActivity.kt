@@ -23,7 +23,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val preferences = Preferences(applicationContext)
+        val preferences = IPreferences.of(applicationContext)
 
         setContent {
             FtpBridgeTheme {
@@ -34,10 +34,10 @@ class MainActivity : ComponentActivity() {
                     Modifier.background(
                         MaterialTheme.colorScheme.background
                     ),
-                    enterTransition = {slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Start)},
-                    exitTransition = {slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Start)},
-                    popEnterTransition =  {slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.End)},
-                    popExitTransition =  {slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.End)},
+                    enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Start) },
+                    exitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Start) },
+                    popEnterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.End) },
+                    popExitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.End) },
                 ) {
                     composable(route = Screen.Permission.route) {
                         PermissionScreen(
@@ -54,7 +54,9 @@ class MainActivity : ComponentActivity() {
                         App(navigation = navController, prefs = remember { preferences })
                     }
                     composable(route = Screen.Settings.route) {
-                        SettingsScreen(prefs = remember { preferences }, goBack = { navController.popBackStack() })
+                        SettingsScreen(
+                            prefs = remember { preferences },
+                            goBack = { navController.popBackStack() })
                     }
                 }
             }

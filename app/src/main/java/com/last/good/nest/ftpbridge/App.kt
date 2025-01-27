@@ -32,14 +32,18 @@ import com.last.good.nest.ftpbridge.services.SyncService
 fun App(
     viewModel: NetworkViewModel = viewModel(),
     navigation: NavHostController,
-    prefs: Preferences
+    prefs: IPreferences
 ) {
     val context = LocalContext.current
-    val ftpServiceIntent = Intent(context, BridgeFtpServer::class.java)
-    val syncServiceIntent = Intent(context, SyncService::class.java)
 
     val ftpAddress by viewModel.ipAddress.collectAsState()
     val ftpServerPort by prefs.port.collectAsState(0)
+
+    val ftpServiceIntent = Intent(context, BridgeFtpServer::class.java).apply {
+        putExtra(BridgeFtpServer.SERVER_PORT_EXTRA, ftpServerPort)
+    }
+
+    val syncServiceIntent = Intent(context, SyncService::class.java)
 
     fun isFtpRunning() = BridgeFtpServer.getState().isRunning()
     fun isSyncRunning() = SyncService.getState().isRunning()
@@ -90,7 +94,10 @@ fun App(
                 checked = isFtpRunning(),
                 onCheckedChange = ::toggleFtpServer,
                 detailsRows = if (ftpAddress == null) listOf(listOf("Turn on HotSpot or connect to Wi-Fi"))
-                else listOf(listOf("IP", ftpAddress!!.hostAddress), listOf("Port", ftpServerPort.toString()))
+                else listOf(
+                    listOf("IP", ftpAddress!!.hostAddress),
+                    listOf("Port", ftpServerPort.toString())
+                )
             )
             ToggleWithDetails(
                 toggleLabel = "FTP service",
