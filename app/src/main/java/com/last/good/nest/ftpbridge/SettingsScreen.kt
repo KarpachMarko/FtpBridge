@@ -18,29 +18,37 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.first
 
 @Composable
 fun SettingsScreen(
     prefs: Preferences,
     goBack: () -> Unit
 ) {
-    val scope = rememberCoroutineScope()
-
     val numberPattern = remember { Regex("^\\d*\$") }
 
-    val ftpServerPort by prefs.port.collectAsState(0)
-    val setFtpServerPort = prefs::setPort
+    var portNumberState by remember { mutableStateOf(TextFieldValue()) }
+
+    LaunchedEffect(Unit) {
+        val lastSavedPort = prefs.port.first()
+        portNumberState = TextFieldValue(lastSavedPort.toString())
+    }
+
+    LaunchedEffect(portNumberState) {
+        prefs.setPort(portNumberState.text.toIntOrNull())
+    }
 
     Column(
         modifier = Modifier
@@ -85,11 +93,10 @@ fun SettingsScreen(
             OutlinedTextField(
                 modifier = Modifier
                     .fillMaxWidth(),
-                value = ftpServerPort.toString(),
+                value = portNumberState,
                 onValueChange = {
-                    if (it.matches(numberPattern)) {
-                        val port = it.toIntOrNull()
-                        scope.launch { setFtpServerPort(port) }
+                    if (it.text.matches(numberPattern)) {
+                        portNumberState = it
                     }
                 },
                 label = { Text(text = "FTP Server Port") },
