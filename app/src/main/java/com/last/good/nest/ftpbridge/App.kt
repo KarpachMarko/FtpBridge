@@ -11,8 +11,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -21,8 +25,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import com.last.good.nest.ftpbridge.component.ToggleWithDetails
 import com.last.good.nest.ftpbridge.component.SettingsRow
+import com.last.good.nest.ftpbridge.component.ToggleWithDetails
 import com.last.good.nest.ftpbridge.model.NetworkViewModel
 import com.last.good.nest.ftpbridge.services.BridgeFtpServer
 import com.last.good.nest.ftpbridge.services.SyncService
@@ -38,12 +42,10 @@ fun App(
 
     val ftpAddress by viewModel.ipAddress.collectAsState()
     val ftpServerPort by prefs.port.collectAsState(0)
+    var loaded by remember { mutableStateOf(false) }
 
-    val ftpServiceIntent = Intent(context, BridgeFtpServer::class.java).apply {
-        putExtra(BridgeFtpServer.SERVER_PORT_EXTRA, ftpServerPort)
-    }
-
-    val syncServiceIntent = Intent(context, SyncService::class.java)
+    var ftpServiceIntent: Intent by remember { mutableStateOf(BridgeFtpServer.getDefaultIntent(context)) }
+    var syncServiceIntent: Intent by remember { mutableStateOf(SyncService.getDefaultIntent(context)) }
 
     fun isFtpRunning() = BridgeFtpServer.getState().isRunning()
     fun isSyncRunning() = SyncService.getState().isRunning()
@@ -62,6 +64,12 @@ fun App(
         } else {
             context.stopService(syncServiceIntent)
         }
+    }
+
+    LaunchedEffect(Unit) {
+        ftpServiceIntent = BridgeFtpServer.getIntentFromPrefs(context, prefs)
+        syncServiceIntent = SyncService.getIntentFromPrefs(context, prefs)
+        loaded = true
     }
 
     Column(
@@ -90,7 +98,7 @@ fun App(
         ) {
             ToggleWithDetails(
                 toggleLabel = "FTP service",
-                enabled = ftpAddress != null,
+                enabled = loaded && ftpAddress != null,
                 checked = isFtpRunning(),
                 onCheckedChange = ::toggleFtpServer,
                 detailsRows = if (ftpAddress == null) listOf(listOf("Turn on HotSpot or connect to Wi-Fi"))
@@ -100,7 +108,8 @@ fun App(
                 )
             )
             ToggleWithDetails(
-                toggleLabel = "FTP service",
+                toggleLabel = "Sync service",
+                enabled = loaded,
                 checked = isSyncRunning(),
                 onCheckedChange = ::toggleSyncServer
             )

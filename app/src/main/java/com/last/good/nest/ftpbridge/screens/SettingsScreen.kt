@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
@@ -26,6 +25,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -43,25 +43,40 @@ import com.last.good.nest.ftpbridge.IPreferences
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.first
+import okio.Path
+import okio.Path.Companion.toPath
 
 @Composable
 fun SettingsScreen(
     prefs: IPreferences,
-    goBack: () -> Unit
+    goBack: () -> Unit,
+    selectFolder: () -> Unit,
+    rootDir: MutableState<Path?>
 ) {
     val numberPattern = remember { Regex("^\\d*\$") }
 
     var portNumberState by remember { mutableStateOf(TextFieldValue()) }
-    var useTempDirectoryState by remember { mutableStateOf(false) }
-    var rootDirectoryState by remember { mutableStateOf("") }
+    var deleteAfterSynced by remember { mutableStateOf(true) }
+    var useTempDirectoryState by remember { mutableStateOf(true) }
+    var rootDirectoryState by rootDir
 
     LaunchedEffect(Unit) {
-        val lastSavedPort = prefs.port.first()
-        portNumberState = TextFieldValue(lastSavedPort.toString())
+        portNumberState = TextFieldValue(prefs.port.first().toString())
+        deleteAfterSynced = prefs.deleteAfterSynced.first()
+        useTempDirectoryState = prefs.useTmpDir.first()
+        rootDirectoryState = prefs.rootDirectory.first()
     }
 
     LaunchedEffect(portNumberState) {
         prefs.setPort(portNumberState.text.toIntOrNull())
+    }
+
+    LaunchedEffect(deleteAfterSynced) {
+        prefs.setDeleteAfterSynced(deleteAfterSynced)
+    }
+
+    LaunchedEffect(useTempDirectoryState) {
+        prefs.setUseTmpDir(useTempDirectoryState)
     }
 
     Column(
@@ -136,6 +151,22 @@ fun SettingsScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
+                            text = "Delete after file is synced",
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Switch(
+                            checked = deleteAfterSynced,
+                            onCheckedChange = { deleteAfterSynced = it },
+
+                            )
+                    }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
                             text = "Use temporary directory",
                             color = MaterialTheme.colorScheme.onSurface
                         )
@@ -150,12 +181,12 @@ fun SettingsScreen(
                             .fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Button(onClick = {}, enabled = !useTempDirectoryState) {
+                        Button(onClick = selectFolder, enabled = !useTempDirectoryState) {
                             Text(text = "Select directory")
                         }
                         Spacer(Modifier.width(10.dp))
                         Text(
-                            text = rootDirectoryState.ifBlank { "Not selected" },
+                            text = rootDirectoryState.toString().ifBlank { "Not selected" },
                             overflow = TextOverflow.Ellipsis,
                             maxLines = 1,
                             color = if (useTempDirectoryState) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface
@@ -171,9 +202,13 @@ fun SettingsScreen(
 @Composable
 private fun SettingsScreenPreview() {
     SettingsScreen(prefs = object : IPreferences {
-        override val port: Flow<Int>
-            get() = sequenceOf(21).asFlow()
-
+        override val port: Flow<Int> get() = sequenceOf(21).asFlow()
         override suspend fun setPort(port: Int?) {}
-    }, goBack = {})
+        override val deleteAfterSynced: Flow<Boolean> get() = sequenceOf(true).asFlow()
+        override suspend fun setDeleteAfterSynced(deleteAfterSynced: Boolean) {}
+        override val useTmpDir: Flow<Boolean> get() = sequenceOf(true).asFlow()
+        override suspend fun setUseTmpDir(useTmpDir: Boolean) {}
+        override val rootDirectory: Flow<Path?> get() = sequenceOf("/FTP/A7 iii/20240917".toPath()).asFlow()
+        override suspend fun setRootDirectory(rootDir: Path?) {}
+    }, goBack = {}, selectFolder = {}, rootDir = remember { mutableStateOf(null) })
 }

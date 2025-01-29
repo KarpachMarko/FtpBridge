@@ -47,6 +47,8 @@ dependencies {
     implementation(libs.data.store)
     implementation(libs.data.store.preferences)
 
+    implementation(libs.androidx.activity.ktx)
+
     // Optional - Integration with ViewModels
 //    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.5")
     // Optional - Integration with LiveData

@@ -5,10 +5,12 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
+import android.content.Context
 import android.content.Intent
 import android.os.IBinder
 import androidx.compose.runtime.mutableStateOf
 import androidx.core.app.NotificationCompat
+import com.last.good.nest.ftpbridge.IPreferences
 import com.last.good.nest.ftpbridge.MainActivity
 import com.last.good.nest.ftpbridge.model.FileSyncState.State.ERROR
 import com.last.good.nest.ftpbridge.model.FileSyncState.State.LOCKED
@@ -18,12 +20,12 @@ import com.last.good.nest.ftpbridge.model.FileSyncState.State.SYNCED
 import com.last.good.nest.ftpbridge.model.FileSyncState.State.SYNC_IN_PROGRESS
 import com.last.good.nest.ftpbridge.model.ServiceState
 import com.last.good.nest.ftpbridge.repository.FileSyncStateRepository
-import com.last.good.nest.ftpbridge.services.BridgeFtpServer.Companion.TMP_SUB_FOLDER_NAME
 import com.last.good.nest.ftpbridge.utils.Notifications
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.io.File
@@ -37,10 +39,27 @@ import kotlin.time.toDuration
 class SyncService : Service() {
 
     companion object {
+        private const val SYNC_DELETE_AFTER_SYNCED_EXTRA = "sync_delete_after_synced"
+        private const val SYNC_USE_TMP_DIR_EXTRA = "sync_use_tmp_dir"
+        private const val SYNC_ROOT_DIR_EXTRA = "sync_root_dir"
+
+        private const val SYNC_DEFAULT_DELETE_AFTER_SYNCED = true
+        private const val SYNC_DEFAULT_USE_TMP_DIR = true
+
         var serviceState = mutableStateOf(ServiceState.NOT_RUNNING)
-        fun getState(): ServiceState {
-            return serviceState.value
+        fun getState(): ServiceState = serviceState.value
+        fun getTempDir(context: Context) = BridgeFtpServer.getTempDir(context)
+        fun getDefaultIntent(context: Context) = Intent(context, SyncService::class.java).apply {
+            putExtra(SYNC_DELETE_AFTER_SYNCED_EXTRA, SYNC_DEFAULT_DELETE_AFTER_SYNCED)
+            putExtra(SYNC_USE_TMP_DIR_EXTRA, SYNC_DEFAULT_USE_TMP_DIR)
         }
+
+        suspend fun getIntentFromPrefs(context: Context, prefs: IPreferences) =
+            Intent(context, SyncService::class.java).apply {
+                putExtra(SYNC_DELETE_AFTER_SYNCED_EXTRA, prefs.deleteAfterSynced.first())
+                putExtra(SYNC_USE_TMP_DIR_EXTRA, prefs.useTmpDir.first())
+                putExtra(SYNC_ROOT_DIR_EXTRA, prefs.rootDirectory.first().toString())
+            }
     }
 
     private val syncNotification = Notifications.Constant.SYNC_FG_SERVICE
@@ -51,8 +70,6 @@ class SyncService : Service() {
     private val fileTransferManager = FileTransferManager()
     private val syncRepository = FileSyncStateRepository()
 
-    private val rootDir by lazy { File(applicationContext.cacheDir, TMP_SUB_FOLDER_NAME) }
-
     override fun onBind(intent: Intent?): IBinder? {
         return null
     }
@@ -61,11 +78,30 @@ class SyncService : Service() {
         super.onCreate()
         createNotificationChannel()
         startForeground(syncNotification.id, createNotification())
-        check(rootDir.exists())
         serviceState.value = ServiceState.RUNNING
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        val useTmpDir =
+            intent?.getBooleanExtra(
+                SYNC_USE_TMP_DIR_EXTRA,
+                SYNC_DEFAULT_USE_TMP_DIR
+            )
+                ?: SYNC_DEFAULT_USE_TMP_DIR
+        val deleteAfterSync = intent?.getBooleanExtra(
+            SYNC_DELETE_AFTER_SYNCED_EXTRA,
+            SYNC_DEFAULT_DELETE_AFTER_SYNCED
+        )
+            ?: SYNC_DEFAULT_DELETE_AFTER_SYNCED
+        val rootDirPath = intent?.getStringExtra(SYNC_ROOT_DIR_EXTRA)
+        val rootDir = if (useTmpDir) {
+            getTempDir(applicationContext)
+        } else {
+            if (rootDirPath != null) File(rootDirPath) else getTempDir(applicationContext)
+        }
+
+        check(rootDir.exists())
+
         serviceScope.launch {
             // Add already existing files to sync repository
             rootDir.listFiles()
@@ -106,8 +142,10 @@ class SyncService : Service() {
                     syncRepository.updateStates(readyToSync = 1.toDuration(DurationUnit.SECONDS))
                     delay(200.toDuration(DurationUnit.MILLISECONDS))
 
-                    println("""READY_TO_SYNC = ${syncRepository.getFilesWithState(READY_TO_SYNC)}                        
-                    SYNCING = ${syncRepository.getFilesWithState(SYNC_IN_PROGRESS)}""".trimIndent())
+                    println(
+                        """READY_TO_SYNC = ${syncRepository.getFilesWithState(READY_TO_SYNC)}                        
+                    SYNCING = ${syncRepository.getFilesWithState(SYNC_IN_PROGRESS)}""".trimIndent()
+                    )
 
                     syncRepository.getFilesWithState(READY_TO_SYNC).keys.forEach {
                         syncRepository.setFileState(it, SYNC_IN_PROGRESS)
@@ -115,13 +153,15 @@ class SyncService : Service() {
                         syncRepository.setFileState(it, if (syncSuccess) SYNCED else ERROR)
                     }
 
-                    syncRepository.getFilesWithState(SYNCED).keys
-                        .forEach {
-                            Path(it).deleteExisting()
-                            syncRepository.setFileState(it, REMOVED)
-                        }
+                    if (deleteAfterSync) {
+                        syncRepository.getFilesWithState(SYNCED).keys
+                            .forEach {
+                                Path(it).deleteExisting()
+                                syncRepository.setFileState(it, REMOVED)
+                            }
 
-                    syncRepository.clearRemoved()
+                        syncRepository.clearRemoved()
+                    }
                 }
             }
         }
