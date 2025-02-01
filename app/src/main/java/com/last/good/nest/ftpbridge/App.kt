@@ -23,6 +23,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.last.good.nest.ftpbridge.component.SettingsRow
@@ -40,8 +41,8 @@ fun App(
 ) {
     val context = LocalContext.current
 
-    val ftpAddress by viewModel.ipAddress.collectAsState()
-    val ftpServerPort by prefs.port.collectAsState(0)
+    val ftpAddress by viewModel.ipAddress.collectAsStateWithLifecycle()
+    val ftpServerPort by prefs.port.collectAsStateWithLifecycle(0)
     var loaded by remember { mutableStateOf(false) }
 
     var ftpServiceIntent: Intent by remember { mutableStateOf(BridgeFtpServer.getDefaultIntent(context)) }

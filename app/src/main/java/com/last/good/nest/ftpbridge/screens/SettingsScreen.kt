@@ -25,7 +25,6 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -39,44 +38,56 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.last.good.nest.ftpbridge.IPreferences
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.first
-import okio.Path
-import okio.Path.Companion.toPath
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.last
+import java.io.File
 
 @Composable
 fun SettingsScreen(
-    prefs: IPreferences,
+    prefs: IPreferences? = null,
     goBack: () -> Unit,
-    selectFolder: () -> Unit,
-    rootDir: MutableState<Path?>
+    selectFolder: () -> Unit
 ) {
     val numberPattern = remember { Regex("^\\d*\$") }
 
     var portNumberState by remember { mutableStateOf(TextFieldValue()) }
     var deleteAfterSynced by remember { mutableStateOf(true) }
     var useTempDirectoryState by remember { mutableStateOf(true) }
-    var rootDirectoryState by rootDir
+    var rootDirectoryState: File? by remember { mutableStateOf(null) }
+
+    val portFlow by (prefs?.port ?: flowOf(2121)).collectAsStateWithLifecycle(2121)
+    val deleteAfterSyncedFlow by (prefs?.deleteAfterSynced ?: flowOf(true)).collectAsStateWithLifecycle(true)
+    val useTempDirectoryFlow by (prefs?.useTmpDir ?: flowOf(true)).collectAsStateWithLifecycle(true)
+    val rootDirectoryFlow by (prefs?.rootDirectory ?: flowOf(null)).collectAsStateWithLifecycle(null)
 
     LaunchedEffect(Unit) {
+        if (prefs == null) {
+            return@LaunchedEffect
+        }
+
         portNumberState = TextFieldValue(prefs.port.first().toString())
         deleteAfterSynced = prefs.deleteAfterSynced.first()
         useTempDirectoryState = prefs.useTmpDir.first()
         rootDirectoryState = prefs.rootDirectory.first()
     }
 
-    LaunchedEffect(portNumberState) {
-        prefs.setPort(portNumberState.text.toIntOrNull())
+    LaunchedEffect(portFlow) {
+        portNumberState = TextFieldValue(portFlow.toString())
     }
 
-    LaunchedEffect(deleteAfterSynced) {
-        prefs.setDeleteAfterSynced(deleteAfterSynced)
+    LaunchedEffect(deleteAfterSyncedFlow) {
+        deleteAfterSynced = deleteAfterSyncedFlow
     }
 
-    LaunchedEffect(useTempDirectoryState) {
-        prefs.setUseTmpDir(useTempDirectoryState)
+    LaunchedEffect(useTempDirectoryFlow) {
+        useTempDirectoryState = useTempDirectoryFlow
+    }
+
+    LaunchedEffect(rootDirectoryFlow) {
+        rootDirectoryState = rootDirectoryFlow
     }
 
     Column(
@@ -201,14 +212,8 @@ fun SettingsScreen(
 @Preview(showBackground = true)
 @Composable
 private fun SettingsScreenPreview() {
-    SettingsScreen(prefs = object : IPreferences {
-        override val port: Flow<Int> get() = sequenceOf(21).asFlow()
-        override suspend fun setPort(port: Int?) {}
-        override val deleteAfterSynced: Flow<Boolean> get() = sequenceOf(true).asFlow()
-        override suspend fun setDeleteAfterSynced(deleteAfterSynced: Boolean) {}
-        override val useTmpDir: Flow<Boolean> get() = sequenceOf(true).asFlow()
-        override suspend fun setUseTmpDir(useTmpDir: Boolean) {}
-        override val rootDirectory: Flow<Path?> get() = sequenceOf("/FTP/A7 iii/20240917".toPath()).asFlow()
-        override suspend fun setRootDirectory(rootDir: Path?) {}
-    }, goBack = {}, selectFolder = {}, rootDir = remember { mutableStateOf(null) })
+    SettingsScreen(
+        goBack = {},
+        selectFolder = {}
+    )
 }

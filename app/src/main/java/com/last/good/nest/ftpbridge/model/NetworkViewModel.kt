@@ -4,22 +4,23 @@ import android.app.Application
 import android.net.ConnectivityManager
 import android.net.Network
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
 import com.last.good.nest.ftpbridge.utils.NetworkUtils
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import java.net.InetAddress
 
 class NetworkViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _ipAddress: MutableStateFlow<InetAddress?> = MutableStateFlow(null)
-    val ipAddress = _ipAddress.asStateFlow()
+    val ipAddress = _ipAddress
+        .onStart { observeNetworkChanges() }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), null)
 
     private val connectivityManager = application.getSystemService(ConnectivityManager::class.java)
-
-    init {
-        observeNetworkChanges()
-    }
 
     private fun observeNetworkChanges() {
         val networkCallback = object : ConnectivityManager.NetworkCallback() {
