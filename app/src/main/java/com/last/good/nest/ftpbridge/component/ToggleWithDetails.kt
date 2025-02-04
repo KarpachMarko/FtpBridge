@@ -45,27 +45,20 @@ fun ToggleWithDetails(
                         topStart = 10.dp, topEnd = 10.dp,
                         bottomStart = mainRowBottomRadius.dp, bottomEnd = mainRowBottomRadius.dp
                     )
-                ),
+                )
+                .padding(horizontal = 10.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                modifier = Modifier
-                    .padding(horizontal = 10.dp)
-                    .fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = toggleLabel,
-                    color = mainRowColor,
-                )
-                Switch(
-                    enabled = enabled,
-                    checked = checked,
-                    onCheckedChange = onCheckedChange
-                )
-            }
+            Text(
+                text = toggleLabel,
+                color = mainRowColor,
+            )
+            Switch(
+                enabled = enabled,
+                checked = checked,
+                onCheckedChange = onCheckedChange
+            )
         }
         Row(
             modifier = Modifier

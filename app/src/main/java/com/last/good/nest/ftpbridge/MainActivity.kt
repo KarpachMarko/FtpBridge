@@ -11,7 +11,6 @@ import androidx.compose.foundation.background
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -28,7 +27,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val preferences = IPreferences.of(applicationContext, lifecycleScope)
+        val preferences = IPreferences.of(applicationContext)
         val coroutineScope = CoroutineScope(Dispatchers.IO)
 
         val folderPickerLauncher = activityResultLauncher(coroutineScope, preferences)
