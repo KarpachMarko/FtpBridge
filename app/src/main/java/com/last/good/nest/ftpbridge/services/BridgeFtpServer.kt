@@ -28,9 +28,13 @@ class BridgeFtpServer : Service() {
         private const val SERVER_PORT_EXTRA = "ftp_port"
         private const val SERVER_USE_TMP_DIR_EXTRA = "ftp_use_tmp_dir"
         private const val SERVER_ROOT_DIR_EXTRA = "ftp_root_dir"
+        private const val SERVER_ALLOW_ANONYMOUS_EXTRA = "ftp_allow_anonymous"
+        private const val SERVER_USERNAME_EXTRA = "ftp_username"
+        private const val SERVER_PASSWORD_EXTRA = "ftp_password"
 
         private const val SERVER_DEFAULT_PORT = 2121
         private const val SERVER_DEFAULT_USE_TMP_DIR = true
+        private const val SERVER_DEFAULT_ALLOW_ANONYMOUS = true
 
         private var serviceState = mutableStateOf(ServiceState.NOT_RUNNING)
 
@@ -39,11 +43,15 @@ class BridgeFtpServer : Service() {
         fun getDefaultIntent(context: Context) = Intent(context, BridgeFtpServer::class.java).apply {
             putExtra(SERVER_PORT_EXTRA, SERVER_DEFAULT_PORT)
             putExtra(SERVER_USE_TMP_DIR_EXTRA, SERVER_DEFAULT_USE_TMP_DIR)
+            putExtra(SERVER_ALLOW_ANONYMOUS_EXTRA, SERVER_DEFAULT_ALLOW_ANONYMOUS)
         }
         suspend fun getIntentFromPrefs(context: Context, prefs: IPreferences) = Intent(context, BridgeFtpServer::class.java).apply {
             putExtra(SERVER_PORT_EXTRA, prefs.port.first())
             putExtra(SERVER_USE_TMP_DIR_EXTRA, prefs.useTmpDir.first())
             putExtra(SERVER_ROOT_DIR_EXTRA, prefs.rootDirectory.first().toString())
+            putExtra(SERVER_ALLOW_ANONYMOUS_EXTRA, prefs.ftpAllowAnonymous.first())
+            putExtra(SERVER_USERNAME_EXTRA, prefs.ftpUsername.first())
+            putExtra(SERVER_PASSWORD_EXTRA, prefs.ftpPassword.first())
         }
     }
 
@@ -75,8 +83,16 @@ class BridgeFtpServer : Service() {
 
         check(rootDir.exists())
 
+        val allowAnonymous =
+            intent?.getBooleanExtra(SERVER_ALLOW_ANONYMOUS_EXTRA, SERVER_DEFAULT_ALLOW_ANONYMOUS)
+                ?: SERVER_DEFAULT_ALLOW_ANONYMOUS
+
+        val username = intent?.getStringExtra(SERVER_USERNAME_EXTRA)
+        val password = intent?.getStringExtra(SERVER_PASSWORD_EXTRA)
+
         val fs = NativeFileSystem(rootDir)
         val auth = FtpUserAuthenticator(fs)
+        if (allowAnonymous) auth.allowAnonymous() else auth.requireAuthentication(username ?: "", password ?: "")
         ftpServer = FTPServer(auth)
 
         startForeground(ftpNotification.id, createNotification(ftpPort))

@@ -8,8 +8,22 @@ import java.net.InetAddress
 
 class FtpUserAuthenticator(private val fs: IFileSystem<*>) : IUserAuthenticator {
 
+    private var requireAuthentication = false
+    private var username: String? = null
+    private var password: String? = null
+
+    fun allowAnonymous() {
+        requireAuthentication = false
+    }
+
+    fun requireAuthentication(username: String, password: String) {
+        requireAuthentication = true
+        this.username = username
+        this.password = password
+    }
+
     override fun needsUsername(con: FTPConnection?): Boolean {
-        return true
+        return requireAuthentication
     }
 
     override fun needsPassword(
@@ -17,7 +31,7 @@ class FtpUserAuthenticator(private val fs: IFileSystem<*>) : IUserAuthenticator 
         username: String?,
         host: InetAddress?
     ): Boolean {
-        return true
+        return requireAuthentication
     }
 
     override fun authenticate(
@@ -26,7 +40,11 @@ class FtpUserAuthenticator(private val fs: IFileSystem<*>) : IUserAuthenticator 
         username: String?,
         password: String?
     ): IFileSystem<*> {
-        if (username == "usr" && password == "pwd") {
+        if (!requireAuthentication) {
+            return fs
+        }
+
+        if (username == this.username && password == this.password) {
             return fs
         }
 

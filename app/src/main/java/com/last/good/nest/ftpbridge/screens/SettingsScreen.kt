@@ -49,18 +49,21 @@ fun SettingsScreen(
     val scrollState = rememberScrollState()
     val numberPattern = remember { Regex("^\\d*\$") }
 
-    val viewModel =  remember { SettingsViewModel(prefs) }
+    val viewModel = remember { SettingsViewModel(prefs) }
 
-    val portNumberState by viewModel.portNumber.collectAsStateWithLifecycle("2121")
+    val ftpPort by viewModel.ftpServerPort.collectAsStateWithLifecycle("2121")
     val deleteAfterSynced by viewModel.deleteAfterSynced.collectAsStateWithLifecycle(true)
     val useTempDirectoryState by viewModel.useTmpDir.collectAsStateWithLifecycle(true)
     val rootDirectoryState by viewModel.rootDir.collectAsStateWithLifecycle(null)
-    val serverAddressState by viewModel.serverAddress.collectAsStateWithLifecycle(null)
-    val serverPortState by viewModel.serverPort.collectAsStateWithLifecycle(null)
-    val shareName by viewModel.shareName.collectAsStateWithLifecycle("")
-    val username by viewModel.username.collectAsStateWithLifecycle("")
-    val password  by viewModel.password.collectAsStateWithLifecycle("")
-    val remoteDestinationDirectory by viewModel.remoteDestinationDirectory.collectAsStateWithLifecycle("")
+    val serverAddressState by viewModel.smbServerAddress.collectAsStateWithLifecycle(null)
+    val ftpAllowAnonymous by viewModel.ftpAllowAnonymous.collectAsStateWithLifecycle(true)
+    val ftpUsername by viewModel.ftpUsername.collectAsStateWithLifecycle("")
+    val ftpPassword by viewModel.ftpPassword.collectAsStateWithLifecycle("")
+    val smbPort by viewModel.smbServerPort.collectAsStateWithLifecycle(null)
+    val shareName by viewModel.smbShareName.collectAsStateWithLifecycle("")
+    val smbUsername by viewModel.smbUsername.collectAsStateWithLifecycle("")
+    val smbPassword by viewModel.smbPassword.collectAsStateWithLifecycle("")
+    val smbRemoteDir by viewModel.smbRemoteDir.collectAsStateWithLifecycle("")
 
     Column(
         modifier = Modifier
@@ -106,7 +109,7 @@ fun SettingsScreen(
             OutlinedTextField(
                 modifier = Modifier
                     .fillMaxWidth(),
-                value = portNumberState,
+                value = ftpPort,
                 onValueChange = {
                     if (it.matches(numberPattern)) {
                         viewModel.setPortNumber(it)
@@ -150,8 +153,7 @@ fun SettingsScreen(
                         Switch(
                             checked = useTempDirectoryState,
                             onCheckedChange = { viewModel.setUseTmpDir(it) },
-
-                            )
+                        )
                     }
                     Row(
                         modifier = Modifier
@@ -172,6 +174,47 @@ fun SettingsScreen(
                 }
             }
             OutlinedGroup(
+                groupTitle = "FTP Authentication"
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Allow anonymous user",
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Switch(
+                            checked = ftpAllowAnonymous,
+                            onCheckedChange = { viewModel.setFtpAllowAnonymous(it) },
+                        )
+                    }
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(5.dp)
+                    ) {
+                        TextField(
+                            modifier = Modifier.weight(1f),
+                            value = ftpUsername,
+                            onValueChange = {
+                                viewModel.setFtpUsername(it)
+                            },
+                            label = { Text(text = "Username") },
+                            singleLine = true
+                        )
+                        PasswordField(
+                            modifier = Modifier.weight(1f),
+                            value = ftpPassword,
+                            onValueChange = {
+                                viewModel.setFtpPassword(it)
+                            },
+                            label = { Text(text = "Password") }
+                        )
+                    }
+                }            }
+            OutlinedGroup(
                 groupTitle = "Remote server"
             ) {
                 Column(
@@ -185,17 +228,17 @@ fun SettingsScreen(
                             modifier = Modifier.weight(2f),
                             value = serverAddressState ?: "",
                             onValueChange = {
-                                viewModel.setServerAddress(it)
+                                viewModel.setSmbServerAddress(it)
                             },
                             label = { Text(text = "Server Address") },
                             singleLine = true
                         )
                         TextField(
                             modifier = Modifier.weight(1f),
-                            value = serverPortState ?: "",
+                            value = smbPort ?: "",
                             onValueChange = {
                                 if (it.matches(numberPattern)) {
-                                    viewModel.setServerPort(it)
+                                    viewModel.setSmbServerPort(it)
                                 }
                             },
                             label = { Text(text = "Port") },
@@ -205,35 +248,35 @@ fun SettingsScreen(
                     }
                     TextField(
                         modifier = Modifier.fillMaxWidth(),
-                        value = shareName                        ,
+                        value = shareName,
                         onValueChange = {
-                            viewModel.setShareName(it)
+                            viewModel.setSmbShareName(it)
                         },
                         label = { Text(text = "Share Name") },
                         singleLine = true
                     )
                     TextField(
                         modifier = Modifier.fillMaxWidth(),
-                        value = username,
+                        value = smbUsername,
                         onValueChange = {
-                            viewModel.setUsername(it)
+                            viewModel.setSmbUsername(it)
                         },
                         label = { Text(text = "Username") },
                         singleLine = true
                     )
                     PasswordField(
                         modifier = Modifier.fillMaxWidth(),
-                        value = password,
+                        value = smbPassword,
                         onValueChange = {
-                            viewModel.setPassword(it)
+                            viewModel.setSmbPassword(it)
                         },
                         label = { Text(text = "Password") }
                     )
                     TextField(
                         modifier = Modifier.fillMaxWidth(),
-                        value = remoteDestinationDirectory,
+                        value = smbRemoteDir,
                         onValueChange = {
-                            viewModel.setRemoteDestinationDirectory(it)
+                            viewModel.setSmbRemoteDir(it)
                         },
                         label = { Text(text = "Sync Directory Destination") },
                         singleLine = true

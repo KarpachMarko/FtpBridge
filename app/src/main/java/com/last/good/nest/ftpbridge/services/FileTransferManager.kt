@@ -15,17 +15,17 @@ import java.io.FileInputStream
 import kotlin.io.path.Path
 import com.hierynomus.smbj.auth.AuthenticationContext as SmbAuthenticationContext
 
-class FileTransferManager {
+class FileTransferManager(
+    private val smbServerAddress: String,
+    private val smbServerPort: Int,
+    private val smbShareName: String,
+    private val smbUsername: String,
+    private val smbPassword: String,
+    private val smbRemoteDir: String,
+) {
 
     companion object {
         private const val TAG = "SmbTransferService"
-
-        private const val SMB_SERVER = "nas.last-good-nest.com"
-        private const val SMB_SERVER_PORT = 445
-        private const val SMB_SHARE_NAME = "nest"
-        private const val SMB_USERNAME = "mkarpats"
-        private const val SMB_PASSWORD = "retriever-overpower-condiment-myself-turf"
-        private const val SMB_REMOTE_DIR = "personal/mkarpats/sync/tmp"
     }
 
     suspend fun uploadFile(localFile: File): Boolean = withContext(Dispatchers.IO) {
@@ -35,19 +35,19 @@ class FileTransferManager {
 
         try {
             // Connect to the SMB server
-            val connection = smbClient.connect(SMB_SERVER, SMB_SERVER_PORT)
+            val connection = smbClient.connect(smbServerAddress, smbServerPort)
             session = connection.authenticate(
-                SmbAuthenticationContext(SMB_USERNAME, SMB_PASSWORD.toCharArray(), "")
+                SmbAuthenticationContext(smbUsername, smbPassword.toCharArray(), "")
             )
             Log.d(TAG, "SMB session connected")
 
             // Access the shared folder
-            diskShare = session.connectShare(SMB_SHARE_NAME) as DiskShare
-            Log.d(TAG, "Connected to SMB share: $SMB_SHARE_NAME")
+            diskShare = session.connectShare(smbShareName) as DiskShare
+            Log.d(TAG, "Connected to SMB share: $smbShareName")
 
             // File information
             val fileName = localFile.name
-            val remoteFilePath = Path(SMB_REMOTE_DIR, fileName)
+            val remoteFilePath = Path(smbRemoteDir, fileName)
 
             // Open the file for writing
             diskShare.openFile(

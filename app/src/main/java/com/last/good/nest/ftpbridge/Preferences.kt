@@ -35,7 +35,7 @@ interface IPreferences {
     }
 
     val port: Flow<Int>
-    suspend fun setPort(port: Int?)
+    suspend fun setFtpPort(port: Int?)
 
     val deleteAfterSynced: Flow<Boolean>
     suspend fun setDeleteAfterSynced(deleteAfterSynced: Boolean)
@@ -46,23 +46,32 @@ interface IPreferences {
     val rootDirectory: Flow<File?>
     suspend fun setRootDirectory(rootDir: File?)
 
-    val serverAddress: Flow<String?>
-    suspend fun setServerAddress(address: String?)
+    val ftpAllowAnonymous: Flow<Boolean>
+    suspend fun setAllowAnonymous(allowAnonymous: Boolean)
 
-    val serverPort: Flow<Int?>
-    suspend fun setServerPort(port: Int?)
+    val ftpUsername: Flow<String?>
+    suspend fun setFtpUsername(userName: String?)
 
-    val shareName: Flow<String?>
-    suspend fun setShareName(name: String?)
+    val ftpPassword: Flow<String?>
+    suspend fun setFtpPassword(password: String?)
 
-    val userName: Flow<String?>
-    suspend fun setUsername(userName: String?)
+    val smbServerAddress: Flow<String?>
+    suspend fun setSmbServerAddress(address: String?)
 
-    val password: Flow<String?>
-    suspend fun setPassword(password: String?)
+    val smbServerPort: Flow<Int?>
+    suspend fun setSmbServerPort(port: Int?)
 
-    val remoteDestinationDirectory: Flow<String?>
-    suspend fun setRemoteDestinationDirectory(dir: String?)
+    val smbShareName: Flow<String?>
+    suspend fun setSmbShareName(name: String?)
+
+    val smbUsername: Flow<String?>
+    suspend fun setSmbUsername(userName: String?)
+
+    val smbPassword: Flow<String?>
+    suspend fun setSmbPassword(password: String?)
+
+    val smbRemoteDestinationDirectory: Flow<String?>
+    suspend fun setSmbRemoteDestinationDirectory(dir: String?)
 }
 
 class DataStorePreferences(
@@ -72,6 +81,9 @@ class DataStorePreferences(
     private val deleteAfterSyncedKey get() = booleanPreferencesKey("delete_after_synced")
     private val useTmpDirKey get() = booleanPreferencesKey("use_tmp_dir")
     private val rootDirectoryKey get() = stringPreferencesKey("root_directory")
+    private val ftpAllowAnonymousKey get() = booleanPreferencesKey("ftp_allow_anonymous")
+    private val ftpUsernameKey get() = stringPreferencesKey("ftp_username")
+    private val ftpPasswordKey get() = stringPreferencesKey("ftp_password")
     private val serverAddressKey get() = stringPreferencesKey("serverAddress")
     private val serverPortKey get() = intPreferencesKey("serverPort")
     private val shareNameKey get() = stringPreferencesKey("shareName")
@@ -80,7 +92,7 @@ class DataStorePreferences(
     private val remoteDestinationDirKey get() = stringPreferencesKey("remoteDestinationDir")
 
     override val port get() = getVal(ftpServerPortKey, 2121)
-    override suspend fun setPort(port: Int?) = setVal(ftpServerPortKey, port)
+    override suspend fun setFtpPort(port: Int?) = setVal(ftpServerPortKey, port)
 
     override val deleteAfterSynced get() = getVal(deleteAfterSyncedKey, true)
     override suspend fun setDeleteAfterSynced(deleteAfterSynced: Boolean) =
@@ -93,23 +105,34 @@ class DataStorePreferences(
     override suspend fun setRootDirectory(rootDir: File?) =
         setVal(rootDirectoryKey, rootDir.toString())
 
-    override val serverAddress: Flow<String?> get() = getVal(serverAddressKey)
-    override suspend fun setServerAddress(address: String?) = setVal(serverAddressKey, address)
+    override val ftpAllowAnonymous: Flow<Boolean> get() = getVal(ftpAllowAnonymousKey, true)
+    override suspend fun setAllowAnonymous(allowAnonymous: Boolean) =
+        setVal(ftpAllowAnonymousKey, allowAnonymous)
 
-    override val serverPort: Flow<Int?> get() = getVal(serverPortKey)
-    override suspend fun setServerPort(port: Int?) = setVal(serverPortKey, port)
+    override val ftpUsername: Flow<String?> get() = getVal(ftpUsernameKey)
+    override suspend fun setFtpUsername(userName: String?) = setVal(ftpUsernameKey, userName)
 
-    override val shareName: Flow<String?> get() = getVal(shareNameKey)
-    override suspend fun setShareName(name: String?) = setVal(shareNameKey, name)
+    override val ftpPassword: Flow<String?> get() = getVal(ftpPasswordKey)
+    override suspend fun setFtpPassword(password: String?) = setVal(ftpPasswordKey, password)
 
-    override val userName: Flow<String?> get() = getVal(usernameKey)
-    override suspend fun setUsername(userName: String?) = setVal(usernameKey, userName)
+    override val smbServerAddress: Flow<String?> get() = getVal(serverAddressKey)
+    override suspend fun setSmbServerAddress(address: String?) = setVal(serverAddressKey, address)
 
-    override val password: Flow<String?> get() = getVal(passwordKey)
-    override suspend fun setPassword(password: String?) = setVal(passwordKey, password)
+    override val smbServerPort: Flow<Int?> get() = getVal(serverPortKey)
+    override suspend fun setSmbServerPort(port: Int?) = setVal(serverPortKey, port)
 
-    override val remoteDestinationDirectory: Flow<String?> get() = getVal(remoteDestinationDirKey)
-    override suspend fun setRemoteDestinationDirectory(dir: String?) = setVal(remoteDestinationDirKey, dir)
+    override val smbShareName: Flow<String?> get() = getVal(shareNameKey)
+    override suspend fun setSmbShareName(name: String?) = setVal(shareNameKey, name)
+
+    override val smbUsername: Flow<String?> get() = getVal(usernameKey)
+    override suspend fun setSmbUsername(userName: String?) = setVal(usernameKey, userName)
+
+    override val smbPassword: Flow<String?> get() = getVal(passwordKey)
+    override suspend fun setSmbPassword(password: String?) = setVal(passwordKey, password)
+
+    override val smbRemoteDestinationDirectory: Flow<String?> get() = getVal(remoteDestinationDirKey)
+    override suspend fun setSmbRemoteDestinationDirectory(dir: String?) =
+        setVal(remoteDestinationDirKey, dir)
 
     private fun <T> getVal(key: Preferences.Key<T>): Flow<T?> =
         prefDataStore.data.map { it[key] }
